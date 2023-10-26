@@ -18,7 +18,7 @@ public class lcengine {
     public static List<Integer> dp;
     public static List<Integer> stk;
     public static List<Integer> other;
-    private static Set<Integer> existingNumbers = new HashSet<>();
+    private static Map<Integer, Integer> existingNumbers = new HashMap<>();
 
     public static void initial() {
         arr = Arrays.asList(27,
@@ -385,11 +385,12 @@ public class lcengine {
     public static void loadExistingNumbers() throws IOException {
         BufferedReader br = new BufferedReader(new FileReader("C:\\Users\\ssunt\\OneDrive\\桌面\\letcodetracker.txt"));
         String line;
+        int index = 0;
         while ((line = br.readLine()) != null) {
             String[] numbers = line.trim().split(" ");
             for (String num : numbers) {
                 if (!num.isEmpty()) { // Only parse if the string is not empty
-                    existingNumbers.add(Integer.parseInt(num));
+                    existingNumbers.put(Integer.parseInt(num), index++);
                 }
             }
         }
@@ -400,7 +401,7 @@ public class lcengine {
         int randNum;
         do {
             randNum = new Random().nextInt(list.size());
-        } while (existingNumbers.contains(list.get(randNum)) || list.size() == existingNumbers.size() / 10);
+        } while (existingNumbers.containsKey(list.get(randNum)) && (existingNumbers.size() - existingNumbers.get(list.get(randNum)) > 14));
         return list.get(randNum);
     }
 
