@@ -399,9 +399,15 @@ public class lcengine {
 
     private static int getUniqueRandom(List<Integer> list) {
         int randNum;
-        do {
-            randNum = new Random().nextInt(list.size());
-        } while (existingNumbers.containsKey(list.get(randNum)) && (existingNumbers.size() - existingNumbers.get(list.get(randNum)) > 14));
+        randNum = new Random().nextInt(list.size());
+
+        if(!existingNumbers.containsKey(list.get(randNum))) {
+            return list.get(randNum);
+        }else {
+            while(existingNumbers.containsKey(list.get(randNum)) && existingNumbers.size() - existingNumbers.get(list.get(randNum)) < 14) {
+                randNum = new Random().nextInt(list.size());
+            }
+        }
         return list.get(randNum);
     }
 
