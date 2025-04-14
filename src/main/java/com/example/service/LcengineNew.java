@@ -1,7 +1,6 @@
 package com.example.service;
 
 import com.example.common.Problems;
-import org.springframework.beans.factory.parsing.Problem;
 import org.springframework.stereotype.Component;
 
 import java.io.*;
@@ -17,33 +16,63 @@ public class LcengineNew {
     private final Problems problems;
 
     public LcengineNew(Problems problems) {
-
         this.problems = problems;
-
     }
 
-    public void initial() {
+    public void initial(String sourceType) {
         Set<Integer> allProblems = new HashSet<>();
-        allProblems.addAll(problems.arr);
-        allProblems.addAll(problems.list);
-        allProblems.addAll(problems.str);
-        allProblems.addAll(problems.tre);
-        allProblems.addAll(problems.bktk);
-        allProblems.addAll(problems.bi);
-        allProblems.addAll(problems.dp);
-        allProblems.addAll(problems.stk);
-        allProblems.addAll(problems.curted);
-        allProblems.addAll(problems.aws);
-        allProblems.addAll(problems.google);
-        allProblems.addAll(problems.meta);
-        allProblems.addAll(problems.linkedin);
-        allProblems.addAll(problems.micro);
+
+        // 根据传入的参数选择题目来源
+        switch (sourceType.toLowerCase()) {
+            case "aws":
+                allProblems.addAll(problems.aws);
+                break;
+            case "google":
+                allProblems.addAll(problems.google);
+                break;
+            case "meta":
+                allProblems.addAll(problems.meta);
+                break;
+            case "bytedance":
+                allProblems.addAll(problems.bytedance);
+                break;
+            case "micro":
+                allProblems.addAll(problems.micro);
+                break;
+            case "general":
+            default:
+                // 使用通用题目集合
+                allProblems.addAll(problems.arr);
+                allProblems.addAll(problems.list);
+                allProblems.addAll(problems.str);
+                allProblems.addAll(problems.tre);
+                allProblems.addAll(problems.bktk);
+                allProblems.addAll(problems.bi);
+                allProblems.addAll(problems.dp);
+                allProblems.addAll(problems.stk);
+                allProblems.addAll(problems.curted);
+                break;
+        }
 
         prblms = new ArrayList<>(allProblems);
+        System.out.println("Initialized problem set from: " + sourceType + " with " + prblms.size() + " problems");
+    }
+
+    // 兼容老代码的方法，默认general
+    public void initial() {
+        initial("general");
     }
 
     public void loadExistingNumbers() throws IOException {
-        BufferedReader br = new BufferedReader(new FileReader(FILE_PATH));
+        File file = new File(FILE_PATH);
+
+        // 如果文件不存在，创建一个空文件
+        if (!file.exists()) {
+            file.createNewFile();
+            return;
+        }
+
+        BufferedReader br = new BufferedReader(new FileReader(file));
         String line;
         while ((line = br.readLine()) != null) {
             String[] data = line.trim().split(" ");
@@ -55,7 +84,6 @@ public class LcengineNew {
                 } catch (NumberFormatException | DateTimeParseException e) {
                     // 处理异常，例如记录日志，跳过无效行等
                     System.err.println("Error parsing line: " + line);
-                    e.printStackTrace();
                 }
             }
         }
@@ -69,12 +97,22 @@ public class LcengineNew {
         // 每次从文件中加载现有的题号
         loadExistingNumbers();
 
+        // 检查是否有足够的题目可供选择
+        if (prblms.isEmpty()) {
+            throw new RuntimeException("No problems available in the selected list.");
+        }
+
         int attempts = 0;
-        while (selectedProblems.size() < 3 && attempts < 100) {
+        while (selectedProblems.size() < 5 && attempts < 100) {
+            // 确保有足够的随机题目可选
+            if (prblms.size() == 0) {
+                break;
+            }
+
             int randomProblem = prblms.get(rand.nextInt(prblms.size()));
 
             // 检查是否存在于文件中以及是否符合重新生成的条件
-            if (isProblemEligible(randomProblem)) {
+            if (isProblemEligible(randomProblem) && !selectedProblems.contains(randomProblem)) {
                 selectedProblems.add(randomProblem);
                 updateFileWithNewProblem(randomProblem); // 生成后更新文件
             } else {
@@ -83,8 +121,8 @@ public class LcengineNew {
             attempts++;
         }
 
-        if (selectedProblems.size() < 3) {
-            throw new RuntimeException("Failed to generate 3 unique problems after 100 attempts.");
+        if (selectedProblems.size() < 5) {
+            System.out.println("Warning: Could only generate " + selectedProblems.size() + " problems. Consider reviewing your problem pool or history criteria.");
         }
 
         return selectedProblems;
@@ -100,5 +138,8 @@ public class LcengineNew {
         bw.write(problemNumber + " " + LocalDate.now().toString());
         bw.newLine();
         bw.close();
+
+        // 更新内存中的记录
+        problemHistory.put(problemNumber, LocalDate.now());
     }
 }
